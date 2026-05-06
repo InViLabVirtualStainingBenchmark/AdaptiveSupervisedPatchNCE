@@ -330,11 +330,22 @@ dependencies that require apt/system installs, very large model downloads.
 Leave blank until local test is complete.
 -->
 
-- **Display/GUI dependencies to remove or neutralize:**
-- **System-level dependencies (non-pip/conda):**
-- **Estimated GPU memory requirement:**
+- **Display/GUI dependencies to remove or neutralize:** visdom is installed but
+  not used at runtime when --display_id -1 is passed. Always include --display_id -1
+  in cluster job scripts.
+- **System-level dependencies (non-pip/conda):** None identified.
+- **Estimated GPU memory requirement:** Not recorded during smoke test. To be
+  confirmed during cluster validation run with full 512x512 resolution.
 - **Estimated storage requirement (weights + data):**
 - **Other notes for cluster adaptation:**
+  - No runtime weight downloads. All weights loaded from --checkpoints_dir.
+    Transfer pretrained weights to $VSC_DATA before job submission.
+  - Always use absolute paths for --dataroot and --checkpoints_dir.
+  - Additional pip packages beyond PyTorch Docker base
+    (pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime):
+    dominate==2.9.1, gputil==1.4.0, opencv-python==4.13.0.92,
+    packaging==26.2, scipy==1.13.1, visdom==0.2.4,
+    websocket-client==1.9.0, tornado==6.5.5
 
 ---
 
@@ -345,6 +356,11 @@ Write 2-4 sentences summarizing what worked, what did not, and what the next ste
 Be specific. Include the overall pass/fail verdict.
 This is the first thing someone reads when picking this model back up.
 -->
+
+ASP smoke test completed on 2026-05-06. Inference with pretrained weights passed
+on 20 BCI and 20 MIST-HER2 test images, producing IHC-like outputs with no errors.
+Training ran for 5 epochs on both datasets without crash, checkpoints saved at
+every epoch. No code changes were required. Frozen environment committed.
 
 **Overall result:** PASS
 
