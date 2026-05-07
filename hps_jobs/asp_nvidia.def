@@ -1,0 +1,60 @@
+Bootstrap: docker
+From: pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
+
+%post
+    apt-get update -y && \
+    apt-get install -y git libgl1 libglib2.0-0 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+    mkdir -p /data/BCI-asp /data/MIST-HER2
+
+    pip install --no-cache-dir --upgrade pip
+
+    # Model-specific packages (beyond PyTorch base).
+    # visdom is NOT installed -- it is never used when --display_id -1 is passed,
+    # and visdom 0.2.4 fails to build on Python 3.11 (broken pkg_resources dependency).
+    pip install --no-cache-dir \
+        "dominate==2.9.1" \
+        "GPUtil==1.4.0" \
+        "opencv-python-headless==4.10.0.84" \
+        "packaging==24.2" \
+        "scipy==1.13.1"
+
+%labels
+    Author vsc21212
+    Model ASP
+    BaseImage pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
+    PyTorch 2.5.1+cu121
+    Python 3.11
+    Benchmark InViLabVirtualStainingBenchmark
+
+%help
+    ASP (Adaptive Supervised PatchNCE) container for the InViLab virtual staining benchmark.
+    Python 3.11, PyTorch 2.5.1 (cu121), CUDA 12.1 runtime.
+    The cluster CUDA 12.x driver is backward compatible with this runtime.
+
+    ASP uses --dataset_mode aligned with separate trainA/trainB folders
+    (not side-by-side AB images). BCI requires a BCI-asp.sqsh whose top level
+    contains trainA/, trainB/, testA/, testB/. MIST-HER2.sqsh is used directly
+    (its top level is already trainA/, trainB/, valA/, valB/).
+
+    Always pass --display_id -1 to suppress visdom. Never omit this flag on the cluster.
+
+    Training (BCI example):
+      apptainer exec --nv \
+        -B $VSC_DATA:$VSC_DATA \
+        -B $VSC_SCRATCH/BCI-asp.sqsh:$VSC_SCRATCH/sqsh_mnt/BCI-asp:image-src=/ \
+        $VSC_SCRATCH/containers/asp_nvidia.sif \
+        python $VSC_DATA/projects/asp/code/AdaptiveSupervisedPatchNCE/train.py \
+          --dataroot $VSC_SCRATCH/sqsh_mnt/BCI-asp \
+          --model cpt --CUT_mode FastCUT ...
+
+    Inference (BCI example):
+      apptainer exec --nv \
+        -B $VSC_DATA:$VSC_DATA \
+        -B $VSC_SCRATCH/BCI-asp.sqsh:$VSC_SCRATCH/sqsh_mnt/BCI-asp:image-src=/ \
+        $VSC_SCRATCH/containers/asp_nvidia.sif \
+        python $VSC_DATA/projects/asp/code/AdaptiveSupervisedPatchNCE/test.py \
+          --dataroot $VSC_SCRATCH/sqsh_mnt/BCI-asp \
+          --phase test --preprocess none ...
