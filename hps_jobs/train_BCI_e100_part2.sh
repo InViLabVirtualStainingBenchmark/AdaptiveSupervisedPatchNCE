@@ -28,7 +28,7 @@
 set -euo pipefail
 
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
-REPO_DIR="$VSC_DATA/projects/asp/code/AdaptiveSupervisedPatchNCE"
+REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RUN_NAME="BCI_e100"
 BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"

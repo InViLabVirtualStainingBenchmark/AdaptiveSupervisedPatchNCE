@@ -42,7 +42,7 @@
 set -euo pipefail
 
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
-REPO_DIR="$VSC_DATA/projects/asp/code/AdaptiveSupervisedPatchNCE"
+REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RUN_NAME="BCI_validate_e3"
 BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"

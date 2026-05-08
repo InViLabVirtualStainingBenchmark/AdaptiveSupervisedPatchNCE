@@ -28,7 +28,7 @@
 set -euo pipefail
 
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
-REPO_DIR="$VSC_DATA/projects/asp/code/AdaptiveSupervisedPatchNCE"
+REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RUN_NAME="MIST_e100"
 MIST_SQSH="$VSC_SCRATCH/MIST-HER2.sqsh"
