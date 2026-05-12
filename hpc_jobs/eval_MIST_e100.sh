@@ -28,7 +28,7 @@ set -euo pipefail
 EVAL_CONTAINER="$VSC_SCRATCH/containers/evaluate_nvidia.sif"
 RESULTS_DIR="$VSC_DATA/projects/asp/outputs/results"
 RUN_NAME="MIST_e100"
-PRED_DIR="$RESULTS_DIR/$RUN_NAME/test_latest/images/fake_B"
+PRED_DIR="$RESULTS_DIR/$RUN_NAME/val_latest/images/fake_B"
 MIST_SQSH="$VSC_SCRATCH/MIST-HER2.sqsh"
 MIST_MNT="$VSC_SCRATCH/sqsh_mnt/MIST-HER2"
 GT_DIR="$MIST_MNT/valB"
@@ -88,9 +88,12 @@ srun apptainer exec --nv \
         --gt           "$GT_DIR" \
         --model_name   ASP \
         --dataset_name MIST-HER2 \
-        --split_name   full_e100 \
+        --split_name   val \
         --match_by     stem \
-        --output       "$VSC_DATA/benchmark_results.csv"
+        --output       "$VSC_DATA/benchmark_results.csv" \
+        --cellpose \
+        --cellpose_model cpsam \
+        --cellpose_n   100
 
 # =========================
 # POST-RUN REPORT

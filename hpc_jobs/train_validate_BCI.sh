@@ -85,7 +85,7 @@ mkdir -p "$BCI_ASP_MNT"
 apptainer exec \
     -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
     "$CONTAINER" \
-    bash -c "echo \"  trainA: \$(ls $BCI_ASP_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_ASP_MNT/trainB | wc -l) images\"; echo \"  testA:  \$(ls $BCI_ASP_MNT/testA  | wc -l) images\"; echo \"  testB:  \$(ls $BCI_ASP_MNT/testB  | wc -l) images\""
+    bash -c "echo \"  trainA: \$(ls $BCI_ASP_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_ASP_MNT/trainB | wc -l) images\"; echo \"  valA:   \$(ls $BCI_ASP_MNT/valA   | wc -l) images\"; echo \"  valB:   \$(ls $BCI_ASP_MNT/valB   | wc -l) images\""
 
 echo ""
 echo "=== Repo check ==="

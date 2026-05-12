@@ -28,7 +28,7 @@ set -euo pipefail
 EVAL_CONTAINER="$VSC_SCRATCH/containers/evaluate_nvidia.sif"
 RESULTS_DIR="$VSC_DATA/projects/asp/outputs/results"
 RUN_NAME="BCI_e100"
-PRED_DIR="$RESULTS_DIR/$RUN_NAME/test_latest/images/fake_B"
+PRED_DIR="$RESULTS_DIR/$RUN_NAME/val_latest/images/fake_B"
 BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
 BCI_ASP_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
 GT_DIR="$BCI_ASP_MNT/valB"
@@ -88,9 +88,12 @@ srun apptainer exec --nv \
         --gt           "$GT_DIR" \
         --model_name   ASP \
         --dataset_name BCI \
-        --split_name   full_e100 \
+        --split_name   val \
         --match_by     stem \
-        --output       "$VSC_DATA/benchmark_results.csv"
+        --output       "$VSC_DATA/benchmark_results.csv" \
+        --cellpose \
+        --cellpose_model cpsam \
+        --cellpose_n   100
 
 # =========================
 # POST-RUN REPORT
