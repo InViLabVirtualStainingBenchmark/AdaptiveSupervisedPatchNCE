@@ -84,7 +84,7 @@ echo "  run name    : $RUN_NAME"
 echo "  checkpoints : $CHECKPOINTS_DIR/$RUN_NAME"
 echo "  dataroot    : $BCI_ASP_MNT (inside BCI-asp.sqsh)"
 
-apptainer exec --nv \
+srun apptainer exec --nv \
     -B "$VSC_DATA:$VSC_DATA" \
     -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
     "$CONTAINER" \
