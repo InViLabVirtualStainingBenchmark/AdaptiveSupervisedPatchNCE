@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=asp_infer_MIST_e100
+#SBATCH --job-name=asp_infer_MIST-HER2_full_e100
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -8,24 +8,24 @@
 #SBATCH -A ap_invilab_td_thesis
 #SBATCH -p ampere_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/infer_MIST_e100.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/infer_MIST_e100.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/infer_MIST-HER2_full_e100.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/infer_MIST-HER2_full_e100.%j.err
 
-# infer_MIST_e100.sh
+# infer_MIST-HER2_full_e100.sh
 # Runs inference on the full MIST-HER2 val split using the latest checkpoint
 # from the MIST 100-epoch training run.
 #
 # MIST-HER2.sqsh has valA/valB at its top level (no testA/testB).
 # --phase val tells the dataloader to read from valA/. Output goes to val_latest/.
 #
-# Submit ONLY after submit_MIST_e100.sh has completed successfully.
-# Submit: sbatch infer_MIST_e100.sh
+# Submit ONLY after submit_MIST-HER2_full_e100.sh has completed successfully.
+# Submit: sbatch infer_MIST-HER2_full_e100.sh
 #
 # Output images land at:
-#   $VSC_DATA/projects/asp/outputs/results/MIST_e100/val_latest/images/fake_B/
+#   $VSC_DATA/projects/asp/outputs/results/MIST-HER2_full_e100/val_latest/images/fake_B/
 #
 # Verify after job:
-#   find $VSC_DATA/projects/asp/outputs/results/MIST_e100 -name "*.jpg" | wc -l
+#   find $VSC_DATA/projects/asp/outputs/results/MIST-HER2_full_e100 -name "*.jpg" | wc -l
 #   Expected: 1000
 
 set -euo pipefail
@@ -34,7 +34,7 @@ CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RESULTS_DIR="$VSC_DATA/projects/asp/outputs/results"
-RUN_NAME="MIST_e100"
+RUN_NAME="MIST-HER2_full_e100"
 MIST_SQSH="$VSC_SCRATCH/MIST-HER2.sqsh"
 MIST_MNT="$VSC_SCRATCH/sqsh_mnt/MIST-HER2"
 
@@ -65,7 +65,7 @@ echo "=== Checkpoint check ==="
 CKPT_DIR="$CHECKPOINTS_DIR/$RUN_NAME"
 if [ ! -d "$CKPT_DIR" ]; then
     echo "ERROR: Checkpoint folder not found: $CKPT_DIR"
-    echo "Has submit_MIST_e100.sh completed successfully?"
+    echo "Has submit_MIST-HER2_full_e100.sh completed successfully?"
     exit 1
 fi
 echo "  Checkpoints found:"
@@ -87,7 +87,7 @@ mkdir -p "$RESULTS_DIR/$RUN_NAME"
 
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total \
            --format=csv -l 5 \
-    > "$VSC_DATA/projects/asp/logs/gpu_infer_MIST_e100.csv" & GPU_LOG_PID=$!
+    > "$VSC_DATA/projects/asp/logs/gpu_infer_MIST-HER2_full_e100.csv" & GPU_LOG_PID=$!
 
 # =========================
 # INFERENCE
@@ -144,7 +144,7 @@ ls "$RESULTS_DIR/$RUN_NAME/val_latest/images/" 2>/dev/null || echo "WARNING: val
 
 echo ""
 echo "=== GPU log tail ==="
-tail -3 "$VSC_DATA/projects/asp/logs/gpu_infer_MIST_e100.csv"
+tail -3 "$VSC_DATA/projects/asp/logs/gpu_infer_MIST-HER2_full_e100.csv"
 
 echo ""
-echo "MIST inference complete. Next step: sbatch eval_MIST_e100.sh"
+echo "MIST inference complete. Next step: sbatch eval_MIST-HER2_full_e100.sh"

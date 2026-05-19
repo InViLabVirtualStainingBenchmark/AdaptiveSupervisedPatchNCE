@@ -24,7 +24,7 @@
 #   1. Job exits cleanly (no Python traceback in log)
 #   2. Loss values in log are not NaN
 #   3. Checkpoint files exist after the job:
-#        find $VSC_DATA/projects/asp/outputs/checkpoints/MIST_validate_e3 -name "*.pth"
+#        find $VSC_DATA/projects/asp/outputs/checkpoints/MIST-HER2_validate_e3 -name "*.pth"
 #   4. GPU log CSV has entries:
 #        tail -5 $VSC_DATA/projects/asp/logs/gpu_train_validate_MIST.csv
 
@@ -33,7 +33,7 @@ set -euo pipefail
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
-RUN_NAME="MIST_validate_e3"
+RUN_NAME="MIST-HER2_validate_e3"
 MIST_SQSH="$VSC_SCRATCH/MIST-HER2.sqsh"
 MIST_MNT="$VSC_SCRATCH/sqsh_mnt/MIST-HER2"
 

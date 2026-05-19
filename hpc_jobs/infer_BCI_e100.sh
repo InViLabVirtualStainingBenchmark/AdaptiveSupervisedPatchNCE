@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=asp_infer_BCI_e100
+#SBATCH --job-name=asp_infer_BCI_full_e100
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -8,10 +8,10 @@
 #SBATCH -A ap_invilab_td_thesis
 #SBATCH -p ampere_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/infer_BCI_e100.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/infer_BCI_e100.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/infer_BCI_full_e100.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/infer_BCI_full_e100.%j.err
 
-# infer_BCI_e100.sh
+# infer_BCI_full_e100.sh
 # Runs inference on the full BCI test split using the latest checkpoint
 # from the BCI 100-epoch training run.
 #
@@ -20,14 +20,14 @@
 # --phase val: BCI-AB.sqsh has valA/valB (not testA/testB). Output goes to val_latest/.
 # --no_flip ensures deterministic ordering.
 #
-# Submit ONLY after submit_BCI_e100.sh has completed successfully.
-# Submit: sbatch infer_BCI_e100.sh
+# Submit ONLY after submit_BCI_full_e100.sh has completed successfully.
+# Submit: sbatch infer_BCI_full_e100.sh
 #
 # Output images land at:
-#   $VSC_DATA/projects/asp/outputs/results/BCI_e100/val_latest/images/fake_B/
+#   $VSC_DATA/projects/asp/outputs/results/BCI_full_e100/val_latest/images/fake_B/
 #
 # Verify after job:
-#   find $VSC_DATA/projects/asp/outputs/results/BCI_e100 -name "*.png" | wc -l
+#   find $VSC_DATA/projects/asp/outputs/results/BCI_full_e100 -name "*.png" | wc -l
 #   Expected: 977
 
 set -euo pipefail
@@ -36,9 +36,9 @@ CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RESULTS_DIR="$VSC_DATA/projects/asp/outputs/results"
-RUN_NAME="BCI_e100"
-BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
-BCI_ASP_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
+RUN_NAME="BCI_full_e100"
+BCI_AB_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
+BCI_AB_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
 
 # =========================
 # MODULES
@@ -67,7 +67,7 @@ echo "=== Checkpoint check ==="
 CKPT_DIR="$CHECKPOINTS_DIR/$RUN_NAME"
 if [ ! -d "$CKPT_DIR" ]; then
     echo "ERROR: Checkpoint folder not found: $CKPT_DIR"
-    echo "Has submit_BCI_e100.sh completed successfully?"
+    echo "Has submit_BCI_full_e100.sh completed successfully?"
     exit 1
 fi
 echo "  Checkpoints found:"
@@ -75,11 +75,11 @@ find "$CKPT_DIR" -name "*.pth" | sort
 
 echo ""
 echo "=== Test dataset check ==="
-mkdir -p "$BCI_ASP_MNT"
+mkdir -p "$BCI_AB_MNT"
 apptainer exec \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
-    bash -c "echo \"  testA: \$(ls $BCI_ASP_MNT/testA | wc -l) images\"; echo \"  testB: \$(ls $BCI_ASP_MNT/testB | wc -l) images\""
+    bash -c "echo \"  testA: \$(ls $BCI_AB_MNT/testA | wc -l) images\"; echo \"  testB: \$(ls $BCI_AB_MNT/testB | wc -l) images\""
 
 mkdir -p "$RESULTS_DIR/$RUN_NAME"
 
@@ -89,7 +89,7 @@ mkdir -p "$RESULTS_DIR/$RUN_NAME"
 
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total \
            --format=csv -l 5 \
-    > "$VSC_DATA/projects/asp/logs/gpu_infer_BCI_e100.csv" & GPU_LOG_PID=$!
+    > "$VSC_DATA/projects/asp/logs/gpu_infer_BCI_full_e100.csv" & GPU_LOG_PID=$!
 
 # =========================
 # INFERENCE
@@ -101,14 +101,14 @@ echo ""
 echo "=== Starting BCI inference ==="
 echo "  run name    : $RUN_NAME"
 echo "  results dir : $RESULTS_DIR/$RUN_NAME"
-echo "  dataroot    : $BCI_ASP_MNT (inside BCI-asp.sqsh)"
+echo "  dataroot    : $BCI_AB_MNT (inside BCI-AB.sqsh)"
 
 srun apptainer exec --nv \
     -B "$VSC_DATA:$VSC_DATA" \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
     python test.py \
-        --dataroot        "$BCI_ASP_MNT" \
+        --dataroot        "$BCI_AB_MNT" \
         --name            "$RUN_NAME" \
         --checkpoints_dir "$CHECKPOINTS_DIR" \
         --results_dir     "$RESULTS_DIR" \
@@ -146,7 +146,7 @@ ls "$RESULTS_DIR/$RUN_NAME/val_latest/images/" 2>/dev/null || echo "WARNING: val
 
 echo ""
 echo "=== GPU log tail ==="
-tail -3 "$VSC_DATA/projects/asp/logs/gpu_infer_BCI_e100.csv"
+tail -3 "$VSC_DATA/projects/asp/logs/gpu_infer_BCI_full_e100.csv"
 
 echo ""
-echo "BCI inference complete. Next step: sbatch eval_BCI_e100.sh"
+echo "BCI inference complete. Next step: sbatch eval_BCI_full_e100.sh"

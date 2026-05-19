@@ -1,11 +1,11 @@
 #!/bin/bash
-# submit_BCI_e100.sh
+# submit_BCI_full_e100.sh
 # Submission wrapper for the two-part BCI 100-epoch ASP training.
 # Submits part 1, then submits part 2 with a Slurm dependency so that
 # part 2 only starts if part 1 exits cleanly (no crash, no timeout).
 #
 # Usage (run from the repo root on the login node):
-#   bash hpc_jobs/submit_BCI_e100.sh
+#   bash hpc_jobs/submit_BCI_full_e100.sh
 #
 # What happens:
 #   1. Part 1 is submitted immediately and queued normally.
@@ -20,7 +20,9 @@
 #   scancel <part1_jobid> <part2_jobid>
 #
 # After both jobs finish, submit inference:
-#   sbatch hpc_jobs/infer_BCI_e100.sh
+#   sbatch hpc_jobs/infer_BCI_full_e100.sh
+
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PART1="$SCRIPT_DIR/train_BCI_e100_part1.sh"
@@ -46,8 +48,8 @@ echo "  Part 2 will only start if part 1 exits successfully."
 
 echo ""
 echo "Monitor with: squeue -u \$USER"
-echo "Part 1 log:   tail -f \$VSC_DATA/projects/asp/logs/train_BCI_p1.$JOB1.out"
-echo "Part 2 log:   tail -f \$VSC_DATA/projects/asp/logs/train_BCI_p2.$JOB2.out"
+echo "Part 1 log:   tail -f \$VSC_DATA/projects/asp/logs/train_full_BCI_e100_p1.$JOB1.out"
+echo "Part 2 log:   tail -f \$VSC_DATA/projects/asp/logs/train_full_BCI_e100_p2.$JOB2.out"
 echo ""
 echo "After both complete, submit inference:"
-echo "  sbatch hpc_jobs/infer_BCI_e100.sh"
+echo "  sbatch hpc_jobs/infer_BCI_full_e100.sh"

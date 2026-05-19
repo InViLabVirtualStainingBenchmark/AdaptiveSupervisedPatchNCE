@@ -15,19 +15,10 @@
 # Runs 3 epochs of ASP training on BCI as a cluster confirmation gate.
 # This job must pass before submitting the full training jobs.
 #
-# PREREQUISITE -- BCI-asp.sqsh:
+# PREREQUISITE -- BCI-AB.sqsh:
 #   ASP uses --dataset_mode aligned with separate trainA/trainB/testA/testB folders.
 #   The generic BCI.sqsh has HE/IHC layout, which does not match.
-#   If BCI-asp.sqsh does not already exist on scratch, create it once on the login node:
-#
-#     mkdir -p $VSC_SCRATCH/bci_asp_staging/{trainA,trainB,testA,testB}
-#     unsquashfs -d $VSC_SCRATCH/bci_unsq $VSC_SCRATCH/BCI.sqsh
-#     cp $VSC_SCRATCH/bci_unsq/HE/train/* $VSC_SCRATCH/bci_asp_staging/trainA/
-#     cp $VSC_SCRATCH/bci_unsq/IHC/train/* $VSC_SCRATCH/bci_asp_staging/trainB/
-#     cp $VSC_SCRATCH/bci_unsq/HE/test/*  $VSC_SCRATCH/bci_asp_staging/testA/
-#     cp $VSC_SCRATCH/bci_unsq/IHC/test/* $VSC_SCRATCH/bci_asp_staging/testB/
-#     mksquashfs $VSC_SCRATCH/bci_asp_staging $VSC_SCRATCH/BCI-asp.sqsh -noappend
-#     rm -rf $VSC_SCRATCH/bci_unsq $VSC_SCRATCH/bci_asp_staging
+#   If BCI-AB.sqsh does not already exist on scratch, create it once on the login node:
 #
 # Submit: sbatch train_validate_BCI.sh
 #
@@ -45,8 +36,8 @@ CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
 RUN_NAME="BCI_validate_e3"
-BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
-BCI_ASP_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
+BCI_AB_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
+BCI_AB_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
 
 # =========================
 # MODULES
@@ -72,20 +63,20 @@ apptainer exec --nv "$CONTAINER" python -c "import torch; print('torch:', torch.
 
 echo ""
 echo "=== SquashFS check ==="
-if [ ! -f "$BCI_ASP_SQSH" ]; then
-    echo "ERROR: BCI-asp.sqsh not found: $BCI_ASP_SQSH"
+if [ ! -f "$BCI_AB_SQSH" ]; then
+    echo "ERROR: BCI-AB.sqsh not found: $BCI_AB_SQSH"
     echo "See the PREREQUISITE section at the top of this script."
     exit 1
 fi
-echo "  BCI-asp.sqsh found"
+echo "  BCI-AB.sqsh found"
 
 echo ""
 echo "=== Dataset check ==="
-mkdir -p "$BCI_ASP_MNT"
+mkdir -p "$BCI_AB_MNT"
 apptainer exec \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
-    bash -c "echo \"  trainA: \$(ls $BCI_ASP_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_ASP_MNT/trainB | wc -l) images\"; echo \"  valA:   \$(ls $BCI_ASP_MNT/valA   | wc -l) images\"; echo \"  valB:   \$(ls $BCI_ASP_MNT/valB   | wc -l) images\""
+    bash -c "echo \"  trainA: \$(ls $BCI_AB_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_AB_MNT/trainB | wc -l) images\"; echo \"  valA:   \$(ls $BCI_AB_MNT/valA   | wc -l) images\"; echo \"  valB:   \$(ls $BCI_AB_MNT/valB   | wc -l) images\""
 
 echo ""
 echo "=== Repo check ==="
@@ -115,14 +106,14 @@ echo ""
 echo "=== Starting validation training (3 epochs, BCI) ==="
 echo "  run name    : $RUN_NAME"
 echo "  checkpoints : $CHECKPOINTS_DIR/$RUN_NAME"
-echo "  dataroot    : $BCI_ASP_MNT (inside BCI-asp.sqsh)"
+echo "  dataroot    : $BCI_AB_MNT (inside BCI-AB.sqsh)"
 
 srun apptainer exec --nv \
     -B "$VSC_DATA:$VSC_DATA" \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
     python train.py \
-        --dataroot        "$BCI_ASP_MNT" \
+        --dataroot        "$BCI_AB_MNT" \
         --name            "$RUN_NAME" \
         --checkpoints_dir "$CHECKPOINTS_DIR" \
         --model           cpt \

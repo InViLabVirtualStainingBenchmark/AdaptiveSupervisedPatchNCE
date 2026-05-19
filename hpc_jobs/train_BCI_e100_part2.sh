@@ -1,17 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=asp_BCI_p2
+#SBATCH --job-name=asp_train_BCI_e100_p2
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=60G
-#SBATCH --time=XX:00:00
+#SBATCH --time=12:00:00
 #SBATCH -A ap_invilab_td_thesis
 #SBATCH -p ampere_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/train_BCI_p2.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/train_BCI_p2.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/train_full_BCI_e100_p2.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/train_full_BCI_e100_p2.%j.err
 
-# train_BCI_e100_part2.sh
+# train_BCI_full_e100_part2.sh
 # Epochs 51-100 of ASP training on BCI at 512x512.
 # Resumes from the latest checkpoint saved by part 1.
 # Linear LR decay applied across these 50 epochs (n_epochs_decay=50).
@@ -20,19 +20,19 @@
 #   Part 1: epochs  1-50  constant LR  (n_epochs=50, n_epochs_decay=0)
 #   Part 2: epochs 51-100 linear decay (epoch_count=51, n_epochs=50, n_epochs_decay=50)
 #
-# DO NOT submit this manually before part 1 finishes -- use submit_BCI_e100.sh.
+# DO NOT submit this manually before part 1 finishes -- use submit_BCI_full_e100.sh.
 # If part 1 failed or was cancelled, do not submit this script.
 #
-# After this job completes, next step: sbatch infer_BCI_e100.sh
+# After this job completes, next step: sbatch infer_BCI_full_e100.sh
 
 set -euo pipefail
 
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
-RUN_NAME="BCI_e100"
-BCI_ASP_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
-BCI_ASP_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
+RUN_NAME="BCI_full_e100"
+BCI_AB_SQSH="$VSC_SCRATCH/BCI-AB.sqsh"
+BCI_AB_MNT="$VSC_SCRATCH/sqsh_mnt/BCI-AB"
 
 # =========================
 # MODULES
@@ -58,11 +58,11 @@ apptainer exec --nv "$CONTAINER" python -c "import torch; print('torch:', torch.
 
 echo ""
 echo "=== Dataset check ==="
-mkdir -p "$BCI_ASP_MNT"
+mkdir -p "$BCI_AB_MNT"
 apptainer exec \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
-    bash -c "echo \"  trainA: \$(ls $BCI_ASP_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_ASP_MNT/trainB | wc -l) images\""
+    bash -c "echo \"  trainA: \$(ls $BCI_AB_MNT/trainA | wc -l) images\"; echo \"  trainB: \$(ls $BCI_AB_MNT/trainB | wc -l) images\""
 
 echo ""
 echo "=== Checkpoint check (part 1 must have completed) ==="
@@ -81,7 +81,7 @@ find "$CKPT_DIR" -name "latest_net_*.pth" | sort
 
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total \
            --format=csv -l 5 \
-    > "$VSC_DATA/projects/asp/logs/gpu_train_BCI_p2.csv" & GPU_LOG_PID=$!
+    > "$VSC_DATA/projects/asp/logs/gpu_train_full_BCI_e100_p2.csv" & GPU_LOG_PID=$!
 
 # =========================
 # TRAINING
@@ -93,14 +93,14 @@ echo ""
 echo "=== Starting BCI training part 2 (epochs 51-100, LR decay) ==="
 echo "  run name    : $RUN_NAME"
 echo "  checkpoints : $CHECKPOINTS_DIR/$RUN_NAME"
-echo "  dataroot    : $BCI_ASP_MNT (inside BCI-asp.sqsh)"
+echo "  dataroot    : $BCI_AB_MNT (inside BCI-AB.sqsh)"
 
 srun apptainer exec --nv \
     -B "$VSC_DATA:$VSC_DATA" \
-    -B "$BCI_ASP_SQSH:$BCI_ASP_MNT:image-src=/" \
+    -B "$BCI_AB_SQSH:$BCI_AB_MNT:image-src=/" \
     "$CONTAINER" \
     python train.py \
-        --dataroot        "$BCI_ASP_MNT" \
+        --dataroot        "$BCI_AB_MNT" \
         --name            "$RUN_NAME" \
         --checkpoints_dir "$CHECKPOINTS_DIR" \
         --model           cpt \
@@ -140,7 +140,7 @@ find "$CHECKPOINTS_DIR/$RUN_NAME" -name "*.pth" | sort
 
 echo ""
 echo "=== GPU log tail ==="
-tail -3 "$VSC_DATA/projects/asp/logs/gpu_train_BCI_p2.csv"
+tail -3 "$VSC_DATA/projects/asp/logs/gpu_train_full_BCI_e100_p2.csv"
 
 echo ""
-echo "BCI full training complete (epochs 1-100). Next step: sbatch infer_BCI_e100.sh"
+echo "BCI full training complete (epochs 1-100). Next step: sbatch infer_BCI_full_e100.sh"

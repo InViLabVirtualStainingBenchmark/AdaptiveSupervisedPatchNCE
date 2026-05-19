@@ -1,34 +1,34 @@
 #!/bin/bash
-#SBATCH --job-name=asp_MIST_p1
+#SBATCH --job-name=asp_train_MIST-HER2_e100_p1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=60G
-#SBATCH --time=XX:00:00
+#SBATCH --time=12:00:00
 #SBATCH -A ap_invilab_td_thesis
 #SBATCH -p ampere_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/train_MIST_p1.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/train_MIST_p1.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21212/projects/asp/logs/train_full_MIST-HER2_e100_p1.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21212/projects/asp/logs/train_full_MIST-HER2_e100_p1.%j.err
 
-# train_MIST_e100_part1.sh
+# train_MIST-HER2_full_e100_part1.sh
 # Epochs 1-50 of ASP training on MIST-HER2 at 512x512 (cropped from 1024).
 # Constant LR throughout (n_epochs_decay=0).
 #
 # MIST has 4642 training images. Use time-per-epoch from the validate job log to
 # set the wall time above: (sec_per_epoch * 50 * 1.20) / 3600 rounded up to next hour.
 #
-# DO NOT submit this manually -- use submit_MIST_e100.sh which chains both parts.
+# DO NOT submit this manually -- use submit_MIST-HER2_full_e100.sh which chains both parts.
 #
 # Checkpoints saved at epoch 25 and epoch 50 (plus latest after every epoch):
-#   $VSC_DATA/projects/asp/outputs/checkpoints/MIST_e100/
+#   $VSC_DATA/projects/asp/outputs/checkpoints/MIST-HER2_full_e100/
 
 set -euo pipefail
 
 CONTAINER="$VSC_SCRATCH/containers/asp_nvidia.sif"
 REPO_DIR="$VSC_DATA/projects/asp/code/asp"
 CHECKPOINTS_DIR="$VSC_DATA/projects/asp/outputs/checkpoints"
-RUN_NAME="MIST_e100"
+RUN_NAME="MIST-HER2_full_e100"
 MIST_SQSH="$VSC_SCRATCH/MIST-HER2.sqsh"
 MIST_MNT="$VSC_SCRATCH/sqsh_mnt/MIST-HER2"
 
@@ -70,7 +70,7 @@ mkdir -p "$CHECKPOINTS_DIR/$RUN_NAME"
 
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total \
            --format=csv -l 5 \
-    > "$VSC_DATA/projects/asp/logs/gpu_train_MIST_p1.csv" & GPU_LOG_PID=$!
+    > "$VSC_DATA/projects/asp/logs/gpu_train_full_MIST-HER2_e100_p1.csv" & GPU_LOG_PID=$!
 
 # =========================
 # TRAINING
@@ -127,7 +127,7 @@ find "$CHECKPOINTS_DIR/$RUN_NAME" -name "*.pth" | sort
 
 echo ""
 echo "=== GPU log tail ==="
-tail -3 "$VSC_DATA/projects/asp/logs/gpu_train_MIST_p1.csv"
+tail -3 "$VSC_DATA/projects/asp/logs/gpu_train_full_MIST-HER2_e100_p1.csv"
 
 echo ""
 echo "MIST part 1 complete (epochs 1-50). Part 2 should start automatically if submitted via wrapper."
